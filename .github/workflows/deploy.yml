@@ -3,23 +3,36 @@ name: Deploy to GitHub Pages
 on:
   push:
     branches:
-      - main
+      - main  # Deploy when main branch is updated
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-      - name: Deploy site
-        id: deploy
-        uses: peaceiris/actions-gh-pages@v4
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./
+      - name: Set up Git
+        run: |
+          git config --global user.name "${{ github.actor }}"
+          git config --global user.email "${{ github.actor }}@users.noreply.github.com"
+
+      - name: Create gh-pages branch
+        run: |
+          git fetch origin gh-pages || git checkout --orphan gh-pages
+          git checkout -B gh-pages
+
+      - name: Copy files
+        run: |
+          git rm -rf .
+          cp -r ../city-insights/* . || cp -r * .  # copy current repo files to branch
+
+      - name: Commit & push
+        run: |
+          git add -A
+          git commit -m "Deploy to GitHub Pages" || echo "No changes to commit"
+          git push -f origin gh-pages
 
       - name: Show GitHub Pages URL
         run: |
