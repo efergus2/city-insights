@@ -50,7 +50,7 @@
   </style>
 
   <script>
-    const WEATHER_API_KEY = "c7005f7a4f5e9d6cfce126f1962e67c8";
+    // WEATHER_API_KEY will come from config.js generated in workflow
     let useFahrenheit = false;
     let darkMode = true;
     let lastWeatherData = null;
@@ -159,5 +159,8 @@
       }
     }
   </script>
+  <!-- Load API key and app script -->
+<script src="config.js"></script>
+<script src="app.js"></script>
 </body>
 </html>
