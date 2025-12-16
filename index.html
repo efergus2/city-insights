@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Location Insights</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 min-h-screen flex items-center justify-center">
+  <div class="w-full max-w-2xl bg-white rounded-2xl shadow-lg p-6">
+    <h1 class="text-2xl font-semibold mb-4 text-center">🌍 Location Insights</h1>
+
+    <div class="flex gap-2 mb-6">
+      <input id="locationInput" type="text" placeholder="Enter a city (e.g. Baltimore)"
+        class="flex-1 border rounded-lg px-4 py-2 focus:outline-none focus:ring" />
+      <button onclick="searchLocation()"
+        class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">Search</button>
+    </div>
+
+    <div id="results" class="space-y-4 hidden">
+      <div class="grid grid-cols-2 gap-4">
+        <div class="card"><span>🌤 Weather</span><p id="weather"></p></div>
+        <div class="card"><span>🌡 Climate</span><p id="climate"></p></div>
+        <div class="card"><span>💰 Avg Salary</span><p id="salary"></p></div>
+        <div class="card"><span>🏠 Cost of Living</span><p id="cost"></p></div>
+        <div class="card"><span>🛒 Grocery Stores</span><p id="grocery"></p></div>
+        <div class="card"><span>💱 Currency</span><p id="currency"></p></div>
+      </div>
+    </div>
+
+    <p class="text-xs text-gray-400 mt-6 text-center">
+      All data is pulled from live public APIs.
+    </p>
+  </div>
+
+  <style>
+    .card {
+      @apply border rounded-xl p-4 bg-gray-50 text-sm;
+    }
+    .card span {
+      @apply font-medium text-gray-600;
+    }
+  </style>
+
+  <script>
+    const WEATHER_API_KEY = "2be9db2f10dbdbc6463fa0f7c32e50b0";
+
+    async function searchLocation() {
+      const city = document.getElementById("locationInput").value;
+      if (!city) return;
+
+      document.getElementById("results").classList.remove("hidden");
+
+      try {
+        // WEATHER
+        const weatherRes = await fetch(`https://api.openweathermap.org/data/2.5/weather?q=${city}&units=metric&appid=${WEATHER_API_KEY}`);
+        const weatherData = await weatherRes.json();
+        if (!weatherData || weatherData.cod !== 200) throw new Error('Weather not found');
+
+        document.getElementById("weather").innerText = `${weatherData.weather[0].main}, ${weatherData.main.temp}°C`;
+        document.getElementById("climate").innerText = `Feels like ${weatherData.main.feels_like}°C`;
+
+        const lat = weatherData.coord.lat;
+        const lon = weatherData.coord.lon;
+        const countryCode = weatherData.sys.country;
+
+        // COUNTRY + CURRENCY
+        const countryRes = await fetch(`https://restcountries.com/v3.1/alpha/${countryCode}`);
+        const countryData = await countryRes.json();
+        const country = countryData[0];
+        const currencyObj = country.currencies;
+        const currency = Object.values(currencyObj)[0];
+        document.getElementById("currency").innerText = `${currency.name} (${currency.symbol})`;
+
+        // AVERAGE SALARY (World Bank)
+        const incomeRes = await fetch(`https://api.worldbank.org/v2/country/${countryCode}/indicator/NY.GNP.PCAP.CD?format=json`);
+        const incomeData = await incomeRes.json();
+        const income = incomeData[1]?.slice().reverse().find(d => d.value)?.value;
+        document.getElementById("salary").innerText = income ? `$${Math.round(income / 12).toLocaleString()} / month (avg)` : "Data unavailable";
+
+        // COST OF LIVING (estimate)
+        document.getElementById("cost").innerText = income ? income > 40000 ? "High" : income > 20000 ? "Medium" : "Low" : "Unknown";
+
+        // GROCERY STORES (OpenStreetMap)
+        const overpassQuery = `[out:json]; node[shop=supermarket](around:10000,${lat},${lon}); out;`;
+        const groceryRes = await fetch("https://overpass-api.de/api/interpreter", {
+          method: "POST",
+          body: overpassQuery
+        });
+        const groceryData = await groceryRes.json();
+        const groceryCount = groceryData.elements ? groceryData.elements.length : 0;
+        document.getElementById("grocery").innerText = groceryCount;
+
+      } catch (err) {
+        console.error(err);
+        document.getElementById("weather").innerText = "N/A";
+        document.getElementById("climate").innerText = "N/A";
+        document.getElementById("salary").innerText = "N/A";
+        document.getElementById("cost").innerText = "N/A";
+        document.getElementById("grocery").innerText = "N/A";
+        document.getElementById("currency").innerText = "N/A";
+      }
+    }
+  </script>
+</body>
+</html>
