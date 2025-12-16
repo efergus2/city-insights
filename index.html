@@ -6,15 +6,22 @@
   <title>Location Insights</title>
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="bg-gray-100 min-h-screen flex items-center justify-center">
-  <div class="w-full max-w-2xl bg-white rounded-2xl shadow-lg p-6">
-    <h1 class="text-2xl font-semibold mb-4 text-center">🌍 Location Insights</h1>
+<body class="bg-gray-900 text-white min-h-screen flex items-center justify-center transition-colors duration-300" id="body">
+  <div class="w-full max-w-2xl bg-gray-800 rounded-2xl shadow-lg p-6 transition-colors duration-300" id="appContainer">
+    <div class="flex justify-between items-center mb-4">
+      <h1 class="text-2xl font-semibold text-center flex-1">🌍 Location Insights</h1>
+      <button id="darkModeToggle" class="ml-4 px-3 py-1 rounded-lg border hover:bg-gray-700">🌙</button>
+    </div>
 
     <div class="flex gap-2 mb-6">
       <input id="locationInput" type="text" placeholder="Enter a city (e.g. Baltimore)"
-        class="flex-1 border rounded-lg px-4 py-2 focus:outline-none focus:ring" />
+        class="flex-1 border rounded-lg px-4 py-2 focus:outline-none focus:ring bg-gray-700 text-white" />
       <button onclick="searchLocation()"
         class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">Search</button>
+    </div>
+
+    <div class="flex gap-2 mb-6">
+      <button id="tempToggle" class="px-3 py-1 rounded-lg border hover:bg-gray-700">°C / °F</button>
     </div>
 
     <div id="results" class="space-y-4 hidden">
@@ -35,15 +42,46 @@
 
   <style>
     .card {
-      @apply border rounded-xl p-4 bg-gray-50 text-sm;
+      @apply border rounded-xl p-4 bg-gray-700 text-sm transition-colors duration-300;
     }
     .card span {
-      @apply font-medium text-gray-600;
+      @apply font-medium text-gray-300;
     }
   </style>
 
   <script>
-    const WEATHER_API_KEY = "2be9db2f10dbdbc6463fa0f7c32e50b0";
+    const WEATHER_API_KEY = "c7005f7a4f5e9d6cfce126f1962e67c8";
+    let useFahrenheit = false;
+
+    const body = document.getElementById('body');
+    const appContainer = document.getElementById('appContainer');
+    const tempToggle = document.getElementById('tempToggle');
+    const darkModeToggle = document.getElementById('darkModeToggle');
+
+    let darkMode = true; // Dark mode by default
+    let lastWeatherData = null;
+
+    tempToggle.addEventListener('click', () => {
+      useFahrenheit = !useFahrenheit;
+      if (lastWeatherData) updateWeatherDisplay(lastWeatherData);
+    });
+
+    darkModeToggle.addEventListener('click', () => {
+      darkMode = !darkMode;
+      body.classList.toggle('bg-gray-900', darkMode);
+      body.classList.toggle('text-white', darkMode);
+      appContainer.classList.toggle('bg-gray-800', darkMode);
+      document.querySelectorAll('.card').forEach(c => c.classList.toggle('bg-gray-700', darkMode));
+    });
+
+    function updateWeatherDisplay(weatherData) {
+      if (!weatherData) return;
+      const temp = useFahrenheit ? Math.round(weatherData.main.temp * 9/5 + 32) : Math.round(weatherData.main.temp);
+      const feels = useFahrenheit ? Math.round(weatherData.main.feels_like * 9/5 + 32) : Math.round(weatherData.main.feels_like);
+      const unit = useFahrenheit ? '°F' : '°C';
+      document.getElementById("weather").innerText = `${weatherData.weather[0].main}, ${temp}${unit}`;
+      document.getElementById("climate").innerText = `Feels like ${feels}${unit}`;
+    }
 
     async function searchLocation() {
       const city = document.getElementById("locationInput").value;
@@ -52,19 +90,17 @@
       document.getElementById("results").classList.remove("hidden");
 
       try {
-        // WEATHER
         const weatherRes = await fetch(`https://api.openweathermap.org/data/2.5/weather?q=${city}&units=metric&appid=${WEATHER_API_KEY}`);
         const weatherData = await weatherRes.json();
         if (!weatherData || weatherData.cod !== 200) throw new Error('Weather not found');
 
-        document.getElementById("weather").innerText = `${weatherData.weather[0].main}, ${weatherData.main.temp}°C`;
-        document.getElementById("climate").innerText = `Feels like ${weatherData.main.feels_like}°C`;
+        lastWeatherData = weatherData;
+        updateWeatherDisplay(weatherData);
 
         const lat = weatherData.coord.lat;
         const lon = weatherData.coord.lon;
         const countryCode = weatherData.sys.country;
 
-        // COUNTRY + CURRENCY
         const countryRes = await fetch(`https://restcountries.com/v3.1/alpha/${countryCode}`);
         const countryData = await countryRes.json();
         const country = countryData[0];
@@ -72,16 +108,13 @@
         const currency = Object.values(currencyObj)[0];
         document.getElementById("currency").innerText = `${currency.name} (${currency.symbol})`;
 
-        // AVERAGE SALARY (World Bank)
         const incomeRes = await fetch(`https://api.worldbank.org/v2/country/${countryCode}/indicator/NY.GNP.PCAP.CD?format=json`);
         const incomeData = await incomeRes.json();
         const income = incomeData[1]?.slice().reverse().find(d => d.value)?.value;
         document.getElementById("salary").innerText = income ? `$${Math.round(income / 12).toLocaleString()} / month (avg)` : "Data unavailable";
 
-        // COST OF LIVING (estimate)
         document.getElementById("cost").innerText = income ? income > 40000 ? "High" : income > 20000 ? "Medium" : "Low" : "Unknown";
 
-        // GROCERY STORES (OpenStreetMap)
         const overpassQuery = `[out:json]; node[shop=supermarket](around:10000,${lat},${lon}); out;`;
         const groceryRes = await fetch("https://overpass-api.de/api/interpreter", {
           method: "POST",

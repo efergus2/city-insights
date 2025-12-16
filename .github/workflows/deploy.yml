@@ -24,4 +24,4 @@ jobs:
       - name: Show GitHub Pages URL
         run: |
           URL="https://${{ github.repository_owner }}.github.io/${{ github.repository }}/"
-          echo "::notice file=index.html::Your site is live at: $URL"
+          echo "::notice file=index.html::Your site is live at: https://efergus2.github.io/city-insights/"
