@@ -1,6 +1,8 @@
-# City Insights Web App **WIP**
+# City Insights Web App (Work in Progress)
 
-A simple, clean web app to get insights about any city using free APIs. Shows **weather, climate, currency, average salary, cost of living, and number of grocery stores**.
+A simple, clean web app to get insights about any city using free APIs. Shows **weather, climate, currency, estimated average salary, estimated cost of living, and number of grocery stores**.
+
+> ⚠️ Work in progress: Data is approximate and may not fully reflect real-world values at the city level.
 
 ## 🌐 Live Demo
 
@@ -11,8 +13,8 @@ A simple, clean web app to get insights about any city using free APIs. Shows **
 * Weather and feels-like temperature (°C / °F toggle)
 * Dark mode (toggle, dark by default)
 * Currency information
-* Estimated monthly salary (from World Bank GNI per capita)
-* Estimated cost of living (based on salary)
+* Estimated monthly salary (from country-level data)
+* Estimated cost of living (approximated from available data)
 * Count of grocery stores (from OpenStreetMap Overpass API)
 * Responsive and polished UI with Tailwind CSS
 
@@ -24,8 +26,14 @@ A simple, clean web app to get insights about any city using free APIs. Shows **
 
   * [OpenWeatherMap](https://openweathermap.org/api) for weather
   * [RestCountries](https://restcountries.com/) for currency
-  * [World Bank API](https://data.worldbank.org/) for salary / GNI
+  * [World Bank API](https://data.worldbank.org/) for salary estimates
   * [OpenStreetMap Overpass API](https://overpass-api.de/) for grocery stores
+
+## ⚠️ Data Disclaimer
+
+* Average salary is **estimated from country-level data** and may not reflect city-specific salaries.
+* Cost of living is **approximated** using publicly available datasets and may not be fully accurate.
+* Grocery store counts are retrieved from OpenStreetMap and may be incomplete.
 
 ## ⚙️ Setup
 
@@ -42,11 +50,9 @@ cd city-insights
 * Name it `OPENWEATHER_API_KEY`
 * Paste your API key and save
 
-3. **Update workflow** (already included) to inject the API key into `config.js` automatically.
+3. **Deploy:**
 
-4. **Deploy:**
-
-* The GitHub Actions workflow automatically deploys to GitHub Pages on each push to `main`
+* The GitHub Actions workflow automatically injects the API key and deploys to GitHub Pages on each push to `main`
 
 ## 🔄 Usage
 
